@@ -60,12 +60,12 @@ module gear(
 }
 
 // включение-выключение деталей
-ver = "Poliv 2.4.2";
+ver = "Poliv 2.4.3";
 top = 1;
-//top = 0;
+top = 0;
 bottom = 1;
 //bottom = 0;
-//shtift = 1;
+shtift = 1;
 shtift = 0;
 facet = 1;
 //facet = 0;
@@ -84,13 +84,13 @@ fn=32;
 tubes_radius=160;
 tubes_radius_offset = 5;
 
-plast_height = 2.5;
+plast_height = 3;
 plast_tube_offset = 6;
 
 
 
-//plast_hole_r = 9/2; 
-plast_hole_r = 12/2; 
+plast_hole_r = 9/2; 
+//plast_hole_r = 12/2; 
 plast_hole_h = plast_height/2 + DELTA;
 
 plast_hole_r_in = 3.2/2;
@@ -228,7 +228,9 @@ difference() {
 
 
 if(shtift) {
-    shtiftYPos = top ? -10 : 0; 
+    
+    
+    shtiftYPos = top || bottom ? -10 : 0; 
 //    g_d = 0.2;
     
     
@@ -269,25 +271,28 @@ if(shtift) {
 
 
 if(facet) {
-    shtiftYPos = top ? -30 : 0; 
+    shtiftZPos = top ? -30 : 0; 
+    shtiftXPos = bottom ? out_r*2  : 0; 
+    
+    
 
    // fitiing
-    translate([0, 0, shtiftYPos]) {
+    translate([shtiftXPos, 0, shtiftZPos]) {
         
         difference() {
         translate([0,0,0]) {
             ring(
                 h=plast_height*2, 
                 or=out_r, 
-                ir= mid_r + DELTA, 
+                ir= mid_r + DELTA*2, 
                 fn=fn*4
             );
             
             translate([0, 0, 0])
             ring(
-                h=plast_height, 
+                h=plast_height - DELTA*3, 
                 or=mid_r + DELTA, 
-                ir=mid_r-2, 
+                ir=mid_r-2.5, 
                 fn=fn*4
             );
             
@@ -359,14 +364,23 @@ translate([0, 0, bottomYPost]) {
          );
          
         
-         
-         
+          for (i=[0:2]) {
+            rotate([0, 0, 360/2*i + 30]) {
+              // дырка под саморез
+              translate([0, 16, -DELTA]) {
+                  cylinder(
+                    r=screw_hole_r, 
+                    h=plast_height*2 + DELTA*2,
+                    $fn=fn*4);
+              }
+          }
+        }
         // дырка для закрепки штифта
-//        translate([0, 0, -DELTA])
-//        cylinder(
-//            r=plast_hole_r + DELTA, 
-//            h=plast_height + DELTA*2,
-//            $fn=fn*4);
+        translate([0, 0, -DELTA])
+        cylinder(
+            r=plast_hole_r + DELTA, 
+            h=plast_height + DELTA*2,
+            $fn=fn*4);
          
          
          
@@ -386,9 +400,9 @@ translate([0, 0, bottomYPost]) {
     rotate([0,0 , -tubes_radius_offset]){
       translate([0,tubes_place_r, plast_height - DELTA]) 
         difference() {
-            cylinder(r=r_tube_out, h=tube_len,$fn=fn*2);
+            cylinder(r=r_tube_out, h=tube_len ,$fn=fn*2);
             translate([0, 0, -DELTA]) 
-                cylinder(r=r_tube_in, h=tube_len+DELTA*2,$fn=fn*2);
+                cylinder(r=r_tube_in, h=tube_len +DELTA*2,$fn=fn*2);
         }
     }
 }
