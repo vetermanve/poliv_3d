@@ -288,10 +288,10 @@ if(facet) {
                 fn=fn*4
             );
             
-            translate([0, 0, 0])
+//            translate([0, 0, 0])
             ring(
                 h=plast_height - DELTA*3, 
-                or=mid_r + DELTA, 
+                or=mid_r + DELTA*4, 
                 ir=mid_r-2.5, 
                 fn=fn*4
             );
