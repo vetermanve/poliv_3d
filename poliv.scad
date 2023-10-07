@@ -16,16 +16,16 @@ module letter(l) {
 // de is epsilon environment to make cutouts non-manifold
 module ring(
         h=1, // height
-        od = 10, // outside diameter
-        id = 5, // inside diameter
+        or = 5, // outside diameter
+        ir = 2.5, // inside diameter
         de = 0.1, // delta 
         fn= 16 // quality
         )
 {
     difference() {
-        cylinder(h=h, r=od/2, $fn=fn);
+        cylinder(h=h, r=or, $fn=fn);
         translate([0, 0, -de])
-            cylinder(h=h+2*de, r=id/2, $fn=fn);
+            cylinder(h=h+2*de, r=ir, $fn=fn);
     }
 }
 
@@ -60,11 +60,15 @@ module gear(
 }
 
 // включение-выключение деталей
-ver = "Poliv 2.4.1";
+ver = "Poliv 2.4.2";
 top = 1;
+//top = 0;
 bottom = 1;
+//bottom = 0;
+//shtift = 1;
 shtift = 0;
-facet = 0;
+facet = 1;
+//facet = 0;
 
 
 // переменные
@@ -76,12 +80,14 @@ r_tube_out = 3.7/2; // радиус трубки наружний
 tube_len = 6;
 tubes_count = 10;
 tubes_place_r = 20;
-fn=16;
+fn=32;
 tubes_radius=160;
 tubes_radius_offset = 5;
 
-plast_height = 3;
+plast_height = 2.5;
 plast_tube_offset = 6;
+
+
 
 //plast_hole_r = 9/2; 
 plast_hole_r = 12/2; 
@@ -95,7 +101,16 @@ face_h = 0.5;
 // угл расположения сосков
 angle = tubes_radius/tubes_count;
 
-    
+// srewes
+fit_offset = 5.5;
+screw_count=6;
+screw_hole_r=1;
+screw_offset=3;
+
+// 
+out_r = tubes_place_r + plast_tube_offset + fit_offset;
+mid_r = tubes_place_r + plast_tube_offset;
+
 
 if(top) {
     
@@ -132,7 +147,7 @@ if(top) {
   difference() {
     // верхняя основа
     cylinder(
-        r=tubes_place_r+plast_tube_offset, 
+        r=out_r, 
         h=plast_height,
         $fn=fn*4);
     
@@ -154,6 +169,19 @@ if(top) {
                 cylinder(r1=r_tube_in_large, r2=r_tube_in, h=plast_height,$fn=fn*2);
     }
     
+    // дырки для шурупов
+    for (i=[0:screw_count]) {
+        rotate([0, 0, 360/screw_count*i]) {
+          translate([0, out_r - screw_offset, -DELTA]) {
+              cylinder(
+                r=screw_hole_r, 
+                h=plast_height*2 + DELTA*2,
+                $fn=fn*4);
+          }
+        }
+    }
+      
+    
     // дырки для сосчков  // нижнее расширение в дырке
 //    for(i=[0:tubes_count])
 //        rotate([0, 0, tubes_radius_offset + angle*i]) {
@@ -174,22 +202,25 @@ if(top) {
 
 
 // закрепочный куб
+cube_height = plast_height*2.5 - plast_hole_h;
 translate([0, -tubes_place_r/2, plast_hole_h + DELTA*2]) 
 difference() {   
     // закрепочный куб
-    cube([tubes_place_r/2, tubes_place_r, plast_height*2 - plast_hole_h]);
+    cube([tubes_place_r/2, tubes_place_r, cube_height]);
     // дырки в кубе
     // left hole
     translate([tubes_place_r/4, tubes_place_r/2 - 5, -DELTA]) 
     cylinder(
-        r=plast_hole_r_in, 
-        h=plast_height + plast_hole_h + DELTA*2,
+        r1= plast_hole_r_in, 
+        r2= plast_hole_r_in+DELTA, 
+        h= cube_height + DELTA*2,
         $fn=fn*4);
     // right hole
     translate([tubes_place_r/4, tubes_place_r/2 + 5, -DELTA]) 
     cylinder(
-        r=plast_hole_r_in, 
-        h=plast_height + plast_hole_h + DELTA*2,
+        r1= plast_hole_r_in, 
+        r2= plast_hole_r_in+DELTA, 
+        h= cube_height + DELTA*2,
         $fn=fn*4);
 }
 }
@@ -198,12 +229,12 @@ difference() {
 
 if(shtift) {
     shtiftYPos = top ? -10 : 0; 
-//    g_d = 0.1;
+//    g_d = 0.2;
     
     
-    for(g_d=[0.15: 0.05: 0.5]) {
+//    for(g_d=[0.15: 0.05: 0.5]) {
     
-    translate([-90 + g_d*260, 0, shtiftYPos]) {
+    translate([0, 0, shtiftYPos]) {
       difference() {
         // основной штифт
         cylinder(
@@ -223,15 +254,15 @@ if(shtift) {
          translate([0, 0, -DELTA])
          gear(
             g_h = plast_height + plast_hole_h + DELTA*2,
-            sp_h = 0.35 + g_d,
-            g_r = 2.5 + g_d,
+            sp_h = 0.35 ,
+            g_r = 2.5 + 0.2,
             de = 0.03 
          );
       }
       
-      translate([0, plast_hole_r-2, plast_height + plast_hole_h - DELTA/2])
-      letter(str(g_d));
-    }
+//      translate([0, plast_hole_r-2, plast_height + plast_hole_h - DELTA/2])
+//      letter(str(g_d));
+//    }
 }
   
 }
@@ -239,7 +270,52 @@ if(shtift) {
 
 if(facet) {
     shtiftYPos = top ? -30 : 0; 
-   
+
+   // fitiing
+    translate([0, 0, shtiftYPos]) {
+        
+        difference() {
+        translate([0,0,0]) {
+            ring(
+                h=plast_height*2, 
+                or=out_r, 
+                ir= mid_r + DELTA, 
+                fn=fn*4
+            );
+            
+            translate([0, 0, 0])
+            ring(
+                h=plast_height, 
+                or=mid_r + DELTA, 
+                ir=mid_r-2, 
+                fn=fn*4
+            );
+            
+        }
+        
+
+        for (i=[0:screw_count]) {
+            rotate([0, 0, 360/screw_count*i]) {
+              // дырка под саморез
+              translate([0, out_r - screw_offset, -DELTA]) {
+                  cylinder(
+                    r=screw_hole_r, 
+                    h=plast_height*2 + DELTA*2,
+                    $fn=fn*4);
+              }
+              
+              // дырка под шляпку самореза
+              translate([0, out_r - screw_offset, -DELTA]) {
+                  cylinder(
+                    r=screw_hole_r*2, 
+                    h=plast_height + DELTA*2,
+                    $fn=fn*4);
+              }
+              
+          }
+      }
+      }
+    }
 }
 
 
@@ -269,15 +345,20 @@ translate([0, 0, bottomYPost]) {
                 cylinder(r=r_tube_in, h=tube_len+DELTA*2,$fn=fn*2);
             // расширение дырки снизу
             translate([0, tubes_place_r, -DELTA]) 
-                cylinder(r1=r_tube_in_large, r2=r_tube_in, h=plast_height/2,$fn=fn*2);
+                cylinder(r1=r_tube_in_large, r2=r_tube_in, h=plast_height,$fn=fn*2);
          }
          
+        
+         // дырка-шестеренка для крепления сервомотора 
          translate([0, 0, -DELTA])
          gear(
-            g_h = plast_height+ DELTA*2
+            g_h = plast_height + plast_hole_h + DELTA*2,
+            sp_h = 0.35 ,
+            g_r = 2.5 + 0.2,
+            de = 0.03 
          );
          
-        // дырки для крепления сервомотора
+        
          
          
         // дырка для закрепки штифта
